@@ -22,6 +22,7 @@
  * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  *
  */
+
 if (!defined('_PS_VERSION_'))
 {
     exit();
@@ -35,12 +36,11 @@ class OneallSocialLogin extends Module
     {
         $this->name = 'oneallsociallogin';
         $this->tab = 'administration';
-        $this->version = '1.9.1';
+        $this->version = '1.2';
         $this->author = 'OneAll LLC';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = array(
-            'min' => '1.6',
-            'max' => '1.6'
+            'min' => '1.7'
         );
         $this->module_key = '2571f9dab09af193a8ca375a09133873';
         $this->secure_key = Tools::encrypt($this->name);
@@ -61,6 +61,7 @@ class OneallSocialLogin extends Module
             Configuration::updateValue('OASL_PROVIDERS', 'facebook,twitter,google,linkedin');
             Configuration::updateValue('OASL_LINK_ACCOUNT_DISABLE', 0);
             Configuration::updateValue('OASL_JS_HOOK_AUTH_DISABLE', 0);
+            Configuration::updateValue('OASL_JS_HOOK_LOGIN_DISABLE', 0);
             Configuration::updateValue('OASL_HOOK_LEFT_DISABLE', 0);
             Configuration::updateValue('OASL_HOOK_RIGHT_DISABLE', 0);
             Configuration::updateValue('OASL_DATA_HANDLING', 'verify');
@@ -147,6 +148,9 @@ class OneallSocialLogin extends Module
             // JavaScript Hook for Authentication
             $js_hook_auth_disable = (Tools::getValue('OASL_JS_HOOK_AUTH_DISABLE') == 1 ? 1 : 0);
 
+            // JavaScript Hook for Login Page
+            $js_hook_login_disable = (Tools::getValue('OASL_JS_HOOK_LOGIN_DISABLE') == 1 ? 1 : 0);
+
             // Settings
             $link_account_disable = (Tools::getValue('OASL_LINK_ACCOUNT_DISABLE') == 1 ? 1 : 0);
             $data_handling = Tools::getValue('OASL_DATA_HANDLING');
@@ -168,6 +172,7 @@ class OneallSocialLogin extends Module
             Configuration::updateValue('OASL_API_PORT', $api_port);
             Configuration::updateValue('OASL_PROVIDERS', implode(',', $use_provider_keys));
             Configuration::updateValue('OASL_JS_HOOK_AUTH_DISABLE', $js_hook_auth_disable);
+            Configuration::updateValue('OASL_JS_HOOK_LOGIN_DISABLE', $js_hook_login_disable);
             Configuration::updateValue('OASL_HOOK_LEFT_DISABLE', $hook_left_disable);
             Configuration::updateValue('OASL_HOOK_RIGHT_DISABLE', $hook_right_disable);
             Configuration::updateValue('OASL_LINK_ACCOUNT_DISABLE', $link_account_disable);
@@ -195,6 +200,9 @@ class OneallSocialLogin extends Module
 
         // JavaScript Hook for Authentication
         $js_hook_auth_disable = Configuration::get('OASL_JS_HOOK_AUTH_DISABLE') == 1 ? 1 : 0;
+
+        // JavaScript Hook for Login Page
+        $js_hook_login_disable = Configuration::get('OASL_JS_HOOK_LOGIN_DISABLE') == 1 ? 1 : 0;
 
         // Settings
         $link_account_disable = Configuration::get('OASL_LINK_ACCOUNT_DISABLE') == 1 ? 1 : 0;
@@ -285,24 +293,30 @@ class OneallSocialLogin extends Module
 
 			<fieldset style="margin-top:20px">
 				<legend>' . $this->l('Custom Embedding') . '</legend>
-				<div class="oasl_notice">' . $this->l('You can manually embed Social Login by adding one of these codes to a .tpl file of your PrestaShop:') . '</div>
-				<label style="width:300px;text-align:left"><code>&lt;div id=&quot;oneall_social_login&quot;&gt;&lt;/div&gt;</code> </label>
+				<div class="oasl_notice">' . $this->l('You can manually embed Social Login by adding this code to a .tpl file of your PrestaShop:') . '</div>
+				<label style="width:300px;text-align:left"><code>{$HOOK_OASL_CUSTOM nofilter}</code></label>
 				<div style="margin-bottom: 20px;">
-						' . $this->l('Use this code to display the Social Login buttons only') . '
+						' . $this->l('Simply copy the code and add it to any .tpl file in your /themes directory.') . '
 				</div>
-				<label style="width:300px;text-align:left"><code>&lt;div id=&quot;oneall_social_login_box&quot;&gt;&lt;/div&gt;</code></label>
-				<div style="margin-bottom: 20px;">
-						' . $this->l('Use this code to display the Social Login buttons inside of a box and with a title') . '
+			</fieldset>
+
+			<fieldset style="margin-top:20px">
+				<legend>' . $this->l('Registration Page') . '</legend>
+				<div class="oasl_notice">' . $this->l('Displays Social Login on the create account page of your shop') . '</div>
+				<label>' . $this->l('Enable Registration Page Hook?') . '</label>
+				<div class="margin-form" style="margin-bottom: 20px;">
+					<input type="radio" name="OASL_JS_HOOK_AUTH_DISABLE" id="OASL_JS_HOOK_AUTH_DISABLE_0" value="0" ' . ($js_hook_auth_disable != 1 ? 'checked="checked"' : '') . ' /> ' . $this->l('Enable') . '&nbsp;
+					<input type="radio" name="OASL_JS_HOOK_AUTH_DISABLE" id="OASL_JS_HOOK_AUTH_DISABLE_1" value="1" ' . ($js_hook_auth_disable == 1 ? 'checked="checked"' : '') . ' /> ' . $this->l('Disable') . '<br />
 				</div>
 			</fieldset>
 
 			<fieldset style="margin-top:20px">
 				<legend>' . $this->l('Authentication Page') . '</legend>
-				<div class="oasl_notice">' . $this->l('Displays Social Login on the sign in/create account page of your shop') . '</div>
+				<div class="oasl_notice">' . $this->l('Displays Social Login on the sign in page of your shop') . '</div>
 				<label>' . $this->l('Enable Authentication Page Hook?') . '</label>
 				<div class="margin-form" style="margin-bottom: 20px;">
-					<input type="radio" name="OASL_JS_HOOK_AUTH_DISABLE" id="OASL_JS_HOOK_AUTH_DISABLE_0" value="0" ' . ($js_hook_auth_disable != 1 ? 'checked="checked"' : '') . ' /> ' . $this->l('Enable') . '&nbsp;
-					<input type="radio" name="OASL_JS_HOOK_AUTH_DISABLE" id="OASL_JS_HOOK_AUTH_DISABLE_1" value="1" ' . ($js_hook_auth_disable == 1 ? 'checked="checked"' : '') . ' /> ' . $this->l('Disable') . '<br />
+					<input type="radio" name="OASL_JS_HOOK_LOGIN_DISABLE" id="OASL_JS_HOOK_LOGIN_DISABLE_0" value="0" ' . ($js_hook_login_disable != 1 ? 'checked="checked"' : '') . ' /> ' . $this->l('Enable') . '&nbsp;
+					<input type="radio" name="OASL_JS_HOOK_LOGIN_DISABLE" id="OASL_JS_HOOK_LOGIN_DISABLE_1" value="1" ' . ($js_hook_login_disable == 1 ? 'checked="checked"' : '') . ' /> ' . $this->l('Disable') . '<br />
 				</div>
 			</fieldset>
 
@@ -507,6 +521,11 @@ class OneallSocialLogin extends Module
                 'pos' => 1
             ),
 
+            // Login
+            'displayCustomerLoginFormAfter' => array(
+                'pos' => 1
+            ),
+
             // Callback
             'displayTop' => array(),
 
@@ -707,6 +726,15 @@ class OneallSocialLogin extends Module
                     }
                     break;
 
+                // Right Column
+                case 'displayCustomerLoginFormAfter':
+                    if (Configuration::get('OASL_JS_HOOK_LOGIN_DISABLE') != 1)
+                    {
+                        $widget_enable = true;
+                        $widget_location = $target;
+                    }
+                    break;
+
                 case 'custom':
                     $widget_enable = true;
                     $widget_location = $target;
@@ -723,6 +751,7 @@ class OneallSocialLogin extends Module
                     // Setup placeholders
                     $smarty->assign('oasl_widget_location', $widget_location);
                     $smarty->assign('oasl_widget_rnd', mt_rand(99999, 9999999));
+                    $smarty->assign('oasl_widget_callback', oneall_social_login_tools::get_callback_uri(true));
                     $smarty->assign('oasl_widget_css', '');
                     $smarty->assign('oasl_widget_providers', '"' . implode('","', $providers) . '"');
 
@@ -745,10 +774,10 @@ class OneallSocialLogin extends Module
     /**
      * Hook: Customer Account Form
      */
-    public function hookDisplayCustomerAccountForm($params)
-    {
-        return $this->hookGeneric($params, 'customer_account_form');
-    }
+    // public function hookDisplayCustomerAccountForm($params)
+    // {
+    //     return $this->hookGeneric($params, 'customer_account_form');
+    // }
 
     /**
      * Hook: Left Column
@@ -764,6 +793,14 @@ class OneallSocialLogin extends Module
     public function hookDisplayRightColumn($params)
     {
         return $this->hookGeneric($params, 'right_column');
+    }
+
+    /**
+     * Hook: Right Column
+     */
+    public function hookDisplayCustomerLoginFormAfter($params)
+    {
+        return $this->hookGeneric($params, 'displayCustomerLoginFormAfter');
     }
 
     /**
@@ -797,11 +834,13 @@ class OneallSocialLogin extends Module
             $providers = explode(',', trim(Configuration::get('OASL_PROVIDERS')));
             if (is_array($providers) and count($providers) > 0)
             {
-                $smarty->assign('oasl_widget_providers', '"' . implode('","', $providers) . '"');
+                $smarty->assign('oasl_widget_providers', "'" . implode(",", $providers) . "'");
+                $smarty->assign('oasl_widget_providers_array', $providers);
             }
 
-            // Add Our JavaScript
-            $this->context->controller->addJs($this->_path . 'views/js/' . $this->name . '.js');
+            // Add Our JavaScript/CSS
+            $this->context->controller->registerJavascript($this->name . '.js', $this->_path . 'views/js/' . $this->name . '.js', ['position' => 'bottom', 'priority' => 8000]);
+            $this->context->controller->registerStylesheet($this->name . '.css', $this->_path . 'views/css/' . $this->name . '.css', ['position' => 'bottom', 'priority' => 8000]);
 
             // Read library
             $output .= $this->display(__FILE__, 'oneallsociallogin_widget.tpl');
@@ -822,7 +861,7 @@ class OneallSocialLogin extends Module
         if (!$this->context->customer->isLogged())
         {
             // Check for callback arguments.
-            if (Tools::getIsset('oa_action') === true and Tools::getIsset('connection_token') === true)
+            if (Tools::getIsset('oa_action') === true && Tools::getIsset('connection_token') === true)
             {
                 // Extract the callback arguments.
                 $oa_action = trim(Tools::getValue('oa_action'));
@@ -897,16 +936,11 @@ class OneallSocialLogin extends Module
                             }
                         }
 
-                        // Create a user new account.
+                        // Create a new user account.
                         if (empty($id_customer))
                         {
                             // Notify the customer ?
                             $customer_email_notify = true;
-
-                            // Redirection url.
-                            $redirect_to = $this->context->link->getModuleLink($this->name, 'register', array(
-                                'back' => oneall_social_login_tools::get_current_url()
-                            ));
 
                             // How do we have to proceed?
                             switch (Configuration::get('OASL_DATA_HANDLING'))
@@ -934,30 +968,53 @@ class OneallSocialLogin extends Module
                                     {
                                         $data['user_first_name'] = 'John';
                                     }
-                                    break;
+                                break;
 
                                 // Ask for manual completion if any of the fields is empty or if the email is already taken.
                                 case 'ask':
-                                    if (empty($data['user_email']) or empty($data['user_first_name']) or empty($data['user_last_name']) or oneall_social_login_tools::get_id_customer_for_email_address($data['user_email']) !== false)
+                                    if (empty($data['user_email']) || empty($data['user_first_name']) || empty($data['user_last_name']) || oneall_social_login_tools::get_id_customer_for_email_address($data['user_email']) !== false)
                                     {
-                                        // Save the data in the session.
-                                        $this->context->cookie->oasl_data = base64_encode(serialize($data));
+                                    	// To which URL shall the user return to?
+                                    	$return_to = trim (Tools::getValue('return_to'));
+                                    	if (empty ($return_to))
+                                    	{
+                                    		$return_to = oneall_social_login_tools::get_current_url();
+                                    	}
 
-                                        // Redirect to the request form
-                                        header('Location: ' . $redirect_to);
+                                    	// Add to cookie data
+                                    	$data['return_to'] = $return_to;
+
+                                        // Save the data in the session.
+                                        $this->context->cookie->oasl_data = base64_encode (serialize ($data));
+                                        $this->context->cookie->write();
+
+                                        // Redirect to the Social Login registration form
+                                        header('Location: ' . $this->context->link->getModuleLink($this->name, 'register'));
                                         exit();
                                     }
-                                    break;
+                                break;
 
                                 // Always verify the fields
                                 default:
+
+                                	// To which URL shall the user return to?
+                                	$return_to = trim (Tools::getValue('return_to'));
+                                	if (empty ($return_to))
+                                	{
+                                		$return_to = oneall_social_login_tools::get_current_url();
+                                	}
+
+                                	// Add to cookie data
+                                	$data['return_to'] = $return_to;
+
                                     // Save the data in the session.
                                     $this->context->cookie->oasl_data = base64_encode(serialize($data));
+                                    $this->context->cookie->write();
 
-                                    // Redirect to the request form
-                                    header('Location: ' . $redirect_to);
+                                     // Redirect to the Social Login registration form
+                                    header('Location: ' . $this->context->link->getModuleLink($this->name, 'register'));
                                     exit();
-                                    break;
+                                break;
                             }
 
                             // Email flags.
@@ -969,18 +1026,23 @@ class OneallSocialLogin extends Module
                         }
 
                         // Login.
-                        if (!empty($id_customer) and oneall_social_login_tools::login_customer($id_customer))
+                        if (!empty($id_customer) && oneall_social_login_tools::login_customer($id_customer))
                         {
-                            // Remove the data (Should not be set here)
+                            // To which URL shall the user return to?
+                            $return_to = trim (Tools::getValue('return_to'));
+                            if (empty ($return_to))
+                            {
+                            	$return_to = oneall_social_login_tools::get_current_url();
+                            }
+
+                            // Remove Social Login Cookie
                             if (isset($this->context->cookie->oasl_data))
                             {
                                 unset($this->context->cookie->oasl_data);
                             }
 
-                            // A refresh is required to update the page
-                            $back = trim(Tools::getValue('back'));
-                            $back = (!empty($back) ? $back : oneall_social_login_tools::get_current_url());
-                            Tools::redirect($back);
+                            // Redirect
+                            Tools::redirect($return_to);
                         }
                     }
                 }

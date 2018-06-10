@@ -26,7 +26,7 @@
 //OneAll Social Login Toolbox
 class oneall_social_login_tools
 {
-    const USER_AGENT = 'SocialLogin/1.9.1 PrestaShop/1.6.x.x (+http://www.oneall.com/)';
+    const USER_AGENT = 'SocialLogin/1.2 PrestaShop/1.7.x.x (+http://www.oneall.com/)';
 
     /**
      * Logs a given customer in.
@@ -55,7 +55,6 @@ class oneall_social_login_tools
             Hook::exec('actionBeforeAuthentication');
 
             $context = Context::getContext();
-            $context->cookie->id_compare = isset($context->cookie->id_compare) ? $context->cookie->id_compare : CompareProduct::getIdCompareByIdCustomer($customer->id);
             $context->cookie->id_customer = (int) ($customer->id);
             $context->cookie->customer_lastname = $customer->lastname;
             $context->cookie->customer_firstname = $customer->firstname;
@@ -793,6 +792,48 @@ class oneall_social_login_tools
     }
 
     /**
+     * Returns the callback URI
+     */
+    public static function get_callback_uri($include_return_to_param = false, $remove_back_param = true)
+    {
+    	// Current URL
+    	$current_url = self::get_current_url();
+
+    	// Remove the back parameter?
+    	if ($remove_back_param)
+    	{
+	    	if (strpos ($current_url, 'back') !== false)
+	    	{
+	    		//Break up url
+	    		list($url_part, $query_part) = array_pad (explode ('?', $current_url), 2, '');
+	    		parse_str ($query_part, $query_vars);
+
+	    		//Remove oa_social_login_source argument
+	    		if (is_array ($query_vars) && isset ($query_vars ['back']))
+	    		{
+	    			unset ($query_vars ['back']);
+	    		}
+
+	    		//Build new url
+	    		$current_url = $url_part . ((is_array ($query_vars) && count ($query_vars) > 0) ? ('?' . http_build_query ($query_vars)) : '');
+	    	}
+    	}
+
+    	// Build callback uri
+    	$callback_uri = Tools::getHttpHost(true) . __PS_BASE_URI__;
+
+    	// Add return_to parameter?
+    	if ($include_return_to_param)
+    	{
+    		$callback_uri .= (parse_url($callback_uri, PHP_URL_QUERY) ? '&' : '?');
+    		$callback_uri .= 'return_to='.urlencode ($current_url);
+    	}
+
+    	// Done
+    	return $callback_uri;
+    }
+
+    /**
      * Returns the current url
      */
     public static function get_current_url()
@@ -824,7 +865,6 @@ class oneall_social_login_tools
         $current_url = $request_protocol . '://' . $request_host . (!empty($request_port) ? (':' . $request_port) : '') . $request_uri;
 
         //Done
-
         return $current_url;
     }
 
